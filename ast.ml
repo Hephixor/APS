@@ -82,7 +82,7 @@ ASTConst of string * typ * expr
 | ASTFRec of string * typ * args * expr
 | ASTVar of string * typ
 | ASTProc of string * args * prog
-| ASTProRec of string * args * prog 
+| ASTProRec of string * args * prog
 and cmds =
 ASTStat of stat
 | ASTStatCmds of stat * cmds

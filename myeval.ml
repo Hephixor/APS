@@ -2,7 +2,7 @@ open Ast
 
 type env = (string * value_expr) list
 and value_expr = Nat of int | Ferm of expr * string list * env | FermR of expr * string * string list * env | Void
-and memory = ('a * int) list
+and 'a memory = ('a * int) list
 
 let int_of_bool x =
 	match x with
@@ -16,8 +16,8 @@ let bool_of_nat x =
 
 
 let rec ident_arg : Ast.args -> string list =
-	fun arg -> match arg with 	
-	|ASTArg (m) -> (match m with 
+	fun arg -> match arg with
+	|ASTArg (m) -> (match m with
 					|ASTArgument (s,_) -> s::[]
 				)
 	|ASTArgs (m,s) -> (match m with
@@ -35,6 +35,10 @@ let rec find_env (env:env) e =
 	| (a,x)::_ when a = e -> x
 	| (_,_)::l -> find_env l e
 
+let rec lookup x env =
+  try List.assoc x env with Not_found -> failwith "id non present dans l'environnement"
+
+let extend x v env = (x,v)::env
 
 let add_memo env mem a =
 	match env with
@@ -43,13 +47,13 @@ let add_memo env mem a =
 
 
 let rec eval_oprim_b env op e1 e2=
-	match op with 
+	match op with
 	Add -> (match (eval_expr env e1), (eval_expr env e2) with
 		| (Nat v1, Nat v2) -> Nat (v1 + v2)
 		| _ -> failwith "c'est grave Add")
 	| Mul -> (match (eval_expr env e1), (eval_expr env e2) with
 		| (Nat v1, Nat v2) -> Nat (v1 * v2)
-		| _ -> failwith "c'est grave Mul") 
+		| _ -> failwith "c'est grave Mul")
 	| Sub -> (match (eval_expr env e1), (eval_expr env e2) with
 		| (Nat v1, Nat v2) -> Nat (v1 - v2)
 		| _ -> failwith "c'est grave Sub")
@@ -77,38 +81,43 @@ and eval_oprim_u (env:env) op e =
 	|True -> Nat 1
 	|False -> Nat 0
 	|_ -> failwith "None op"
-and eval_expr (env:env) expr = 
+and eval_expr (env:env) expr =
 	match expr with
-	ASTNum(x) -> Nat x
-	|ASTBool(b) -> if (b) then Nat(1) else Nat(0)
-	|ASTId(x) -> (find_env env x)
-	|ASTUnary(op,e) -> eval_oprim_u env op e 
-	|ASTPrim(op,e1,e2) -> eval_oprim_b env op e1 e2
-	|ASTIf(cond, th, el) -> if(bool_of_nat (eval_expr env cond))  then eval_expr env th else eval_expr env el
-	|ASTAbstr (arg, exp) -> Ferm (exp, (ident_arg arg), env)
-	|ASTApp(exp, exps) -> 
+	ASTNum(n) -> (Nat n)
+	|ASTBool(b) -> (if (b) then Nat(1) else Nat(0))
+  |ASTId(x) -> lookup x env
+	|ASTUnary(op,e) -> (eval_oprim_u env op e)
+	|ASTPrim(op,e1,e2) -> (eval_oprim_b env op e1 e2)
+	|ASTIf(cond, th, el) -> (if(bool_of_nat (eval_expr env cond))  then eval_expr env th else eval_expr env el)
+	|ASTAbstr (arg, exp) -> (Ferm (exp, (ident_arg arg), env))
+	|ASTApp(exp, exps) ->
 	(match eval_expr env exp with
 		|Ferm (exa, idlist, envi) ->
-		eval_expr ((List.map2 (fun x1 x2 -> (x1, x2)) 
-						idlist 
+		eval_expr ((List.map2 (fun x1 x2 -> (x1, x2))
+						idlist
 						(List.map (fun x -> eval_expr envi x) (ident_exprs exps))
 					)@env
 				  ) exa
 		|FermR (exa, lf, idlist, envi) ->
 		eval_expr ((lf, FermR(exa,lf,idlist,envi))
 				  ::
-				  (List.map2 (fun x1 x2 -> (x1, x2)) 
-						idlist 
+				  (List.map2 (fun x1 x2 -> (x1, x2))
+						idlist
 						(List.map (fun x -> eval_expr envi x) (ident_exprs exps)))
 				  @env) exa
 		|_ -> failwith "probleme avec l'application")
 
 
 
-let print v = 
+let print v =
 	match v with
 	 Nat v -> (string_of_int v)
 	| _ -> " <function> "
+
+let rec print_env env =
+	match env with
+	|[]->()
+	|(x,v)::l -> print v ;print_env l
 
 let eval_stat env st =
 	match st with

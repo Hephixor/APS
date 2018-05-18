@@ -40,6 +40,5 @@ rule token = parse
 | ']' { RCRO }
 | '(' { LPAR }
 | ')' { RPAR }
-| ['a'-'z''A'-'Z']['a'-'z''A'-'Z''0'-'9']* as id { IDENT(id) }
+| ['a'-'z''A'-'Z']['a'-'z''A'-'Z']* as id { IDENT(id) }
 | eof { raise Eof }
-

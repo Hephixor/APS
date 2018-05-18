@@ -1,0 +1,13 @@
+[
+  FUN succ int [x:int](add x 1);
+  FUN compute int [n:(((int -> int) -> int) -> int)]((n succ) 0);
+  FUN Z int [f:(int -> int)][x:int]x;
+  FUN S int [n:int][f:(int -> int)][x:int]((n f) (f x));
+  CONST n2 (((int -> int) -> int) -> int) (S (S Z));
+  FUN REC nx (((int -> int) -> int) -> int) [n:int](if (eq n 0) Z (S (nx (sub n 1))));
+  ECHO (compute Z);
+  ECHO (compute (S Z));
+  ECHO (compute (S (S Z)));
+  ECHO (compute (n2 n2));
+  ECHO (compute (nx 42))
+]
